@@ -6,7 +6,7 @@ import (
 	"io"
 	"log"
 
-	"github.com/jamesbcook/chat-bot/kbchat"
+	"github.com/jamesbcook/chatbot/kbchat"
 )
 
 //Get takes a function which takes a team name

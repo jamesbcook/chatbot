@@ -5,7 +5,7 @@ import (
 
 	"os/exec"
 
-	"github.com/jamesbcook/chat-bot/kbchat"
+	"github.com/jamesbcook/chatbot/kbchat"
 )
 
 const (

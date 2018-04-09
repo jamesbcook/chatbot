@@ -1,3 +1,3 @@
-[submodule "chat-bot-plugins"]
-	path = chat-bot-plugins
-	url = git@github.com:jamesbcook/chat-bot-plugins.git
+[submodule "chatbot-plugins"]
+	path = chatbot-plugins
+	url = git@github.com:jamesbcook/chatbot-plugins.git

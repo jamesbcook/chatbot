@@ -3,7 +3,7 @@ package team
 import (
 	"testing"
 
-	"github.com/jamesbcook/chat-bot/kbchat"
+	"github.com/jamesbcook/chatbot/kbchat"
 )
 
 func TestAdmins(t *testing.T) {

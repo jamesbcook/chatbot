@@ -3,7 +3,7 @@ package kbchat_test
 import (
 	"testing"
 
-	"github.com/jamesbcook/chat-bot/kbchat"
+	"github.com/jamesbcook/chatbot/kbchat"
 )
 
 func TestValidUser(t *testing.T) {

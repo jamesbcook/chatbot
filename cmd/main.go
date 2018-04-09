@@ -9,7 +9,7 @@ import (
 	"plugin"
 	"strings"
 
-	"github.com/jamesbcook/chat-bot/kbchat"
+	"github.com/jamesbcook/chatbot/kbchat"
 )
 
 //Getter is used for the Get function in the plugins
