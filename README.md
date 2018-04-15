@@ -29,8 +29,8 @@ make build
 The Following environmental variables need to be set:
 
 * CHATBOT_ACTIVE_PLUGINS
+  * ```export CHATBOT_ACTIVE_PLUGINS=/home/keybase/active-plugins/```
 * CHATBOT_BACKGROUND_PLUGINS
-* CHATBOT_WEATHER
-* CHATBOT_GIPHY
-* CHATBOT_TEAM || CHATBOT_USERS
-* CHATBOT_LOG_KEY (if using encrypted logs)
+  * ```export CHATBOT_BACKGROUND_PLUGINS=/home/keybase/background-plugins/```
+
+## Please read the plugin README files as they may require their own environmental variables
