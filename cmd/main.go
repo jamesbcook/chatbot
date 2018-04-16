@@ -50,30 +50,30 @@ func loadActivePlugins(files []string) error {
 	for _, f := range files {
 		p, err := plugin.Open(f)
 		if err != nil {
-			return fmt.Errorf("Can't open plugin file %v", err)
+			return fmt.Errorf("Can't open plugin file %s %v", f, err)
 		}
 
 		nameSym, err := p.Lookup("CMD")
 		if err != nil {
-			return fmt.Errorf("Can't find CMD symbol %v", err)
+			return fmt.Errorf("Can't find CMD symbol %v in %s", err, f)
 		}
 
 		h, err := p.Lookup("Help")
 		if err != nil {
-			return fmt.Errorf("Can't find Help symbol %v", err)
+			return fmt.Errorf("Can't find Help symbol %v in %s", err, f)
 		}
 
 		help = append(help, *h.(*string))
 		plugHolder := &pluginHolder{}
 		tmp, err := p.Lookup("Getter")
 		if err != nil {
-			return fmt.Errorf("Can't find Get symbol %v", err)
+			return fmt.Errorf("Can't find Get symbol %v in %s", err, f)
 		}
 
 		plugHolder.Getter = tmp.(Getter)
 		tmp, err = p.Lookup("Sender")
 		if err != nil {
-			return fmt.Errorf("Can't find Sender symbol %v", err)
+			return fmt.Errorf("Can't find Sender symbol %v in %s", err, f)
 		}
 
 		plugHolder.Sender = tmp.(Sender)
@@ -86,11 +86,11 @@ func loadBackgroundPlugins(files []string) error {
 	for _, f := range files {
 		p, err := plugin.Open(f)
 		if err != nil {
-			return fmt.Errorf("Can't open plugin file %v", err)
+			return fmt.Errorf("Can't open plugin file %s %v", f, err)
 		}
 		nameSym, err := p.Lookup("Name")
 		if err != nil {
-			return fmt.Errorf("Can't find Name symbol %v", err)
+			return fmt.Errorf("Can't find Name symbol %v in %s", err, f)
 		}
 		backgroundPluginMap[*nameSym.(*string)] = &backgroundPluginHolder{plug: p}
 	}
