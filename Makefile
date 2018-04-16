@@ -28,6 +28,8 @@ plugin-setup:
 	cp chatbot-plugins/media/giphy/main.go bin/active-plugins/giphy.go
 	cp chatbot-plugins/media/direct/main.go bin/active-plugins/media.go
 	cp chatbot-plugins/media/direct/main.go bin/active-plugins/media.go
+	cp chatbot-plugins/screenshot/main.go bin/active-plugins/screenshot.go
+	cp chatbot-plugins/virustotal/hash/main.go bin/active-plugins/virustotal.go
 
 	cp chatbot-plugins/chatlog/plain/main.go bin/background-plugins/log.go
 	cp chatbot-plugins/auth/team/main.go bin/background-plugins/auth.go
@@ -50,6 +52,11 @@ plugin-build:
 	rm bin/active-plugins/giphy.go
 	go build --buildmode=plugin -o bin/active-plugins/media.so bin/active-plugins/media.go
 	rm bin/active-plugins/media.go
+	go build --buildmode=plugin -o bin/active-plugins/screenshot.so bin/active-plugins/screenshot.go
+	rm bin/active-plugins/screenshot.go
+	go build --buildmode=plugin -o bin/active-plugins/virustotal.so bin/active-plugins/virustotal.go
+	rm bin/active-plugins/virustotal.go
+
 	go build --buildmode=plugin -o bin/background-plugins/auth.so bin/background-plugins/auth.go
 	rm bin/background-plugins/auth.go
 	go build --buildmode=plugin -o bin/background-plugins/log.so bin/background-plugins/log.go
