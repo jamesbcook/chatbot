@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"plugin"
 	"strings"
+	"time"
 
 	"github.com/jamesbcook/chatbot/kbchat"
 )
@@ -47,7 +48,8 @@ var (
 )
 
 func loadActivePlugins(files []string) error {
-	for _, f := range files {
+	help = make([]string, len(files))
+	for x, f := range files {
 		p, err := plugin.Open(f)
 		if err != nil {
 			return fmt.Errorf("Can't open plugin file %s %v", f, err)
@@ -63,7 +65,7 @@ func loadActivePlugins(files []string) error {
 			return fmt.Errorf("Can't find Help symbol %v in %s", err, f)
 		}
 
-		help = append(help, *h.(*string))
+		help[x] = *h.(*string)
 		plugHolder := &pluginHolder{}
 		tmp, err := p.Lookup("Getter")
 		if err != nil {
@@ -77,7 +79,9 @@ func loadActivePlugins(files []string) error {
 		}
 
 		plugHolder.Sender = tmp.(Sender)
-		pluginMap[*nameSym.(*string)] = plugHolder
+		if _, ok := pluginMap[*nameSym.(*string)]; !ok {
+			pluginMap[*nameSym.(*string)] = plugHolder
+		}
 	}
 	return nil
 }
@@ -92,7 +96,9 @@ func loadBackgroundPlugins(files []string) error {
 		if err != nil {
 			return fmt.Errorf("Can't find Name symbol %v in %s", err, f)
 		}
-		backgroundPluginMap[*nameSym.(*string)] = &backgroundPluginHolder{plug: p}
+		if _, ok := backgroundPluginMap[*nameSym.(*string)]; !ok {
+			backgroundPluginMap[*nameSym.(*string)] = &backgroundPluginHolder{plug: p}
+		}
 	}
 	return nil
 }
@@ -121,27 +127,53 @@ func cleanHelp(input []string) []string {
 }
 
 func main() {
-	activePluginEnv := os.Getenv("CHATBOT_ACTIVE_PLUGINS")
-	backgroundPluginEnv := os.Getenv("CHATBOT_BACKGROUND_PLUGINS")
+	go func() {
+		for {
+			activePluginEnv := os.Getenv("CHATBOT_ACTIVE_PLUGINS")
+			if activePluginEnv == "" {
+				log.Println("Missing CHATBOT_ACTIVE_PLUGINS environment variable")
+			}
+			activePlugins, err := filepath.Glob(activePluginEnv + "/*.so")
+			if err != nil {
+				log.Fatal("Error with filepath glob", err)
+			}
 
-	activePlugins, err := filepath.Glob(activePluginEnv + "/*.so")
-	if err != nil {
-		log.Fatal("Error with filepath glob", err)
-	}
+			if err := loadActivePlugins(activePlugins); err != nil {
+				log.Fatal(err)
+			}
+			time.Sleep(30 * time.Second)
+		}
+	}()
 
-	backgroundPlugins, err := filepath.Glob(backgroundPluginEnv + "/*.so")
-	if err != nil {
-		log.Fatal("Error with filepath glob", err)
-	}
+	go func() {
+		for {
+			backgroundPluginEnv := os.Getenv("CHATBOT_BACKGROUND_PLUGINS")
+			if backgroundPluginEnv == "" {
+				log.Println("Missing CHATBOT_BACKGROUND_PLUGINS environment variable")
+			}
+			backgroundPlugins, err := filepath.Glob(backgroundPluginEnv + "/*.so")
+			if err != nil {
+				log.Fatal("Error with filepath glob", err)
+			}
 
-	err = loadActivePlugins(activePlugins)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = loadBackgroundPlugins(backgroundPlugins)
-	if err != nil {
-		log.Fatal(err)
-	}
+			if err := loadBackgroundPlugins(backgroundPlugins); err != nil {
+				log.Fatal(err)
+			}
+			time.Sleep(30 * time.Second)
+		}
+	}()
+
+	go func() {
+		for {
+			if _, ok := pluginMap["/help"]; ok {
+				pluginMap["/help"].Get(strings.Join(cleanHelp(help), "\n"))
+			}
+			time.Sleep(30 * time.Second)
+		}
+	}()
+
+	time.Sleep(10 * time.Second)
+	fmt.Println("Ready")
 
 	var writerList []io.Writer
 	writerList = append(writerList, os.Stdout)
@@ -154,11 +186,7 @@ func main() {
 		plugWriter := backgroundPluginMap["log"].Logger
 		writerList = append(writerList, plugWriter)
 	}
-
 	writers = io.MultiWriter(writerList...)
-	if _, ok := pluginMap["/help"]; ok {
-		pluginMap["/help"].Get(strings.Join(cleanHelp(help), "\n"))
-	}
 
 	if _, ok := backgroundPluginMap["auth"]; ok {
 		startSym, err := backgroundPluginMap["auth"].plug.Lookup("Start")
