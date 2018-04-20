@@ -163,6 +163,8 @@ func main() {
 		}
 	}()
 
+	time.Sleep(10 * time.Second)
+
 	go func() {
 		for {
 			if _, ok := pluginMap["/help"]; ok {
@@ -172,7 +174,6 @@ func main() {
 		}
 	}()
 
-	time.Sleep(10 * time.Second)
 	fmt.Println("Ready")
 
 	var writerList []io.Writer
