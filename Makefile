@@ -37,30 +37,20 @@ plugin-setup:
 plugin-build:
 	@echo "+ $@"
 	go build --buildmode=plugin -o bin/active-plugins/crypto-api.so bin/active-plugins/crypto-api.go
-	rm bin/active-plugins/crypto-api.go
 	go build --buildmode=plugin -o bin/active-plugins/help.so bin/active-plugins/help.go
-	rm bin/active-plugins/help.go
 	go build --buildmode=plugin -o bin/active-plugins/reddit.so bin/active-plugins/reddit.go
-	rm bin/active-plugins/reddit.go
 	go build --buildmode=plugin -o bin/active-plugins/weather.so bin/active-plugins/weather.go
-	rm bin/active-plugins/weather.go
 	go build --buildmode=plugin -o bin/active-plugins/hibp-account.so bin/active-plugins/hibp-account.go
-	rm bin/active-plugins/hibp-account.go
 	go build --buildmode=plugin -o bin/active-plugins/hibp-password.so bin/active-plugins/hibp-password.go
-	rm bin/active-plugins/hibp-password.go
 	go build --buildmode=plugin -o bin/active-plugins/giphy.so bin/active-plugins/giphy.go
-	rm bin/active-plugins/giphy.go
 	go build --buildmode=plugin -o bin/active-plugins/media.so bin/active-plugins/media.go
-	rm bin/active-plugins/media.go
 	go build --buildmode=plugin -o bin/active-plugins/screenshot.so bin/active-plugins/screenshot.go
-	rm bin/active-plugins/screenshot.go
 	go build --buildmode=plugin -o bin/active-plugins/virustotal.so bin/active-plugins/virustotal.go
-	rm bin/active-plugins/virustotal.go
 
 	go build --buildmode=plugin -o bin/background-plugins/auth.so bin/background-plugins/auth.go
-	rm bin/background-plugins/auth.go
 	go build --buildmode=plugin -o bin/background-plugins/log.so bin/background-plugins/log.go
-	rm bin/background-plugins/log.go
+	rm bin/active-plugins/*.go
+	rm bin/background-plugins/*.go
 
 clean:
 	rm -r bin/
