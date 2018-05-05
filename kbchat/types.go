@@ -3,6 +3,7 @@ package kbchat
 import (
 	"bufio"
 	"io"
+	"os"
 )
 
 //Senders
@@ -98,8 +99,9 @@ type Thread struct {
 type API struct {
 	Input      io.Writer
 	Output     *bufio.Scanner
-	Username   string
 	ValidUsers []string
+	Proc       *os.Process
+	username   string
 }
 
 // SubscriptionMessage contains a message and conversation object

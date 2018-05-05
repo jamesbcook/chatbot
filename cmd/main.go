@@ -230,10 +230,9 @@ func main() {
 			res, err := pluginMap[command[0]].Get(arg)
 			if err != nil {
 				errorWriter(fmt.Errorf("[Error] Get command %v", err))
-				res = "[Error] in command"
 			}
 			if len(res) <= 0 {
-				return
+				res = err.Error()
 			}
 			if err := pluginMap[command[0]].Send(msg.Conversation.ID, res); err != nil {
 				errorWriter(fmt.Errorf("[Error] Send command %v", err))
