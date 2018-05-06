@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -28,6 +29,11 @@ type Logger interface {
 	Write(p []byte) (int, error)
 }
 
+//Debugger is used to print debugging output from a plugin
+type Debugger interface {
+	Debug(bool)
+}
+
 type pluginHolder struct {
 	Getter
 	Sender
@@ -45,6 +51,7 @@ var (
 	backgroundPluginMap = make(map[string]*backgroundPluginHolder)
 	writers             io.Writer
 	help                []string
+	debug               bool
 )
 
 func loadActivePlugins(files []string) error {
@@ -77,6 +84,12 @@ func loadActivePlugins(files []string) error {
 		if err != nil {
 			return fmt.Errorf("Can't find Sender symbol %v in %s", err, f)
 		}
+
+		d, err := p.Lookup("Debugger")
+		if err != nil {
+			return fmt.Errorf("Can't find Debugger symbol %v in %s", err, f)
+		}
+		d.(Debugger).Debug(debug)
 
 		plugHolder.Sender = tmp.(Sender)
 		if _, ok := pluginMap[*nameSym.(*string)]; !ok {
@@ -127,6 +140,9 @@ func cleanHelp(input []string) []string {
 }
 
 func main() {
+	d := flag.Bool("debug", false, "Print debug statements from plugins")
+	flag.Parse()
+	debug = *d
 	go func() {
 		for {
 			activePluginEnv := os.Getenv("CHATBOT_ACTIVE_PLUGINS")
@@ -222,7 +238,6 @@ func main() {
 		}
 		command := strings.Fields(msg.Message.Content.Text.Body)
 		arg := strings.Join(command[1:], " ")
-		errorWriter(fmt.Errorf("[Debug] %v", command))
 		if _, ok := pluginMap[command[0]]; !ok {
 			continue
 		}

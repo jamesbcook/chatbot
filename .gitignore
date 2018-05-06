@@ -52,4 +52,5 @@ builds/**/images/*
 
 dev/*
 .vscode/*
-
+bin.tar.gz
+bin/*
