@@ -26,7 +26,6 @@ func getUsername(ctx context.Context) (username string, err error) {
 	if err = p.Start(); err != nil {
 		return "", fmt.Errorf("Unable to start process %v", err)
 	}
-
 	scanner := bufio.NewScanner(output)
 	if !scanner.Scan() {
 		return "", errors.New("unable to find Keybase username")
@@ -36,6 +35,10 @@ func getUsername(ctx context.Context) (username string, err error) {
 		return "", errors.New("invalid Keybase username output")
 	}
 	username = toks[1]
+
+	if err := p.Wait(); err != nil {
+		return "", errors.New("Error waiting for status command")
+	}
 
 	select {
 	case <-ctx.Done():
@@ -69,6 +72,9 @@ func Start(chatType string) (*API, error) {
 	}
 
 	boutput := bufio.NewScanner(output)
+	go func() {
+		p.Wait()
+	}()
 	return &API{
 		Input:    input,
 		Output:   boutput,
