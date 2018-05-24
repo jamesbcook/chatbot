@@ -62,38 +62,38 @@ func loadActivePlugins(files []string) error {
 			return fmt.Errorf("Can't open plugin file %s %v", f, err)
 		}
 
-		nameSym, err := p.Lookup("CMD")
+		cmdSym, err := p.Lookup("CMD")
 		if err != nil {
 			return fmt.Errorf("Can't find CMD symbol %v in %s", err, f)
 		}
 
-		h, err := p.Lookup("Help")
+		helpSym, err := p.Lookup("Help")
 		if err != nil {
 			return fmt.Errorf("Can't find Help symbol %v in %s", err, f)
 		}
 
-		help[x] = *h.(*string)
+		help[x] = *helpSym.(*string)
 		plugHolder := &pluginHolder{}
-		tmp, err := p.Lookup("Getter")
+		getSym, err := p.Lookup("Getter")
 		if err != nil {
 			return fmt.Errorf("Can't find Get symbol %v in %s", err, f)
 		}
 
-		plugHolder.Getter = tmp.(Getter)
-		tmp, err = p.Lookup("Sender")
+		plugHolder.Getter = getSym.(Getter)
+		sendSym, err := p.Lookup("Sender")
 		if err != nil {
 			return fmt.Errorf("Can't find Sender symbol %v in %s", err, f)
 		}
 
-		d, err := p.Lookup("Debugger")
+		debugSym, err := p.Lookup("Debugger")
 		if err != nil {
 			return fmt.Errorf("Can't find Debugger symbol %v in %s", err, f)
 		}
-		d.(Debugger).Debug(debug)
+		debugSym.(Debugger).Debug(debug)
 
-		plugHolder.Sender = tmp.(Sender)
-		if _, ok := pluginMap[*nameSym.(*string)]; !ok {
-			pluginMap[*nameSym.(*string)] = plugHolder
+		plugHolder.Sender = sendSym.(Sender)
+		if _, ok := pluginMap[*cmdSym.(*string)]; !ok {
+			pluginMap[*cmdSym.(*string)] = plugHolder
 		}
 	}
 	return nil
@@ -183,8 +183,8 @@ func main() {
 
 	go func() {
 		for {
-			if _, ok := pluginMap["/help"]; ok {
-				pluginMap["/help"].Get(strings.Join(cleanHelp(help), "\n"))
+			if helpPlugin, ok := pluginMap["/help"]; ok {
+				helpPlugin.Get(strings.Join(cleanHelp(help), "\n"))
 			}
 			time.Sleep(30 * time.Second)
 		}
@@ -194,29 +194,29 @@ func main() {
 
 	var writerList []io.Writer
 	writerList = append(writerList, os.Stdout)
-	if _, ok := backgroundPluginMap["log"]; ok {
-		writer, err := backgroundPluginMap["log"].plug.Lookup("Logger")
+	if logPlugin, ok := backgroundPluginMap["log"]; ok {
+		writer, err := logPlugin.plug.Lookup("Logger")
 		if err != nil {
 			log.Fatalf("Error looking up logger in log plugin %v", err)
 		}
-		backgroundPluginMap["log"].Logger = writer.(Logger)
-		plugWriter := backgroundPluginMap["log"].Logger
+		logPlugin.Logger = writer.(Logger)
+		plugWriter := logPlugin.Logger
 		writerList = append(writerList, plugWriter)
 	}
 	writers = io.MultiWriter(writerList...)
 
-	if _, ok := backgroundPluginMap["auth"]; ok {
-		startSym, err := backgroundPluginMap["auth"].plug.Lookup("Start")
+	if authPlugin, ok := backgroundPluginMap["auth"]; ok {
+		startSym, err := authPlugin.plug.Lookup("Start")
 		if err != nil {
 			fatalErrorWriter(fmt.Errorf("[Error] auth start symbol not found"))
 		}
 		//start valid user gathering in the background
 		go startSym.(func(io.Writer))(writers)
-		validSym, err := backgroundPluginMap["auth"].plug.Lookup("Validate")
+		validSym, err := authPlugin.plug.Lookup("Validate")
 		if err != nil {
 			fatalErrorWriter(fmt.Errorf("[Error] auth validate symbol not found"))
 		}
-		backgroundPluginMap["auth"].Validate = validSym.(func(string) bool)
+		authPlugin.Validate = validSym.(func(string) bool)
 	}
 
 	kbcRead, err := kbchat.Start("chat")
@@ -231,8 +231,8 @@ func main() {
 			errorWriter(fmt.Errorf("[Error] reading message %v", err))
 			continue
 		}
-		if _, ok := backgroundPluginMap["auth"]; ok {
-			if !backgroundPluginMap["auth"].Validate(msg.Message.Sender.Username) {
+		if authPlugin, ok := backgroundPluginMap["auth"]; ok {
+			if !authPlugin.Validate(msg.Message.Sender.Username) {
 				continue
 			}
 		}

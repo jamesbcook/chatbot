@@ -5,8 +5,8 @@
 Make sure to [install Keybase](https://keybase.io/download).
 
 ```bash
-git clone https://github.com/jamesbcook/chat-bot.git
-cd chat-bot
+git clone https://github.com/jamesbcook/chatbot.git
+cd chatbot
 git submodule init
 git submodule update
 ```
@@ -14,11 +14,11 @@ git submodule update
 or
 
 ```bash
-git clone --recurse-submodules https://github.com/jamesbcook/chat-bot.git
-cd chat-bot
+git clone --recurse-submodules https://github.com/jamesbcook/chatbot.git
+cd chatbot
 ```
 
-The chat-bot-plugins directory are all the plugins that can be used with chatbot.  Running the following commands will build all the plugins and the main binary:
+The chatbot-plugins directory are all the plugins that can be used with chatbot.  Running the following commands will build all the plugins and the main binary:
 
 ```bash
 make plugin-setup
