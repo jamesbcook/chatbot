@@ -1,9 +1,7 @@
 package kbchat
 
 import (
-	"context"
 	"testing"
-	"time"
 )
 
 func TestKeyBaseLocation(t *testing.T) {
@@ -12,25 +10,10 @@ func TestKeyBaseLocation(t *testing.T) {
 	}
 }
 
-func TestGetUsername(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	username, err := getUsername(ctx)
-	if err != nil {
-		t.Fatalf("Unable to get user name %v", err)
-	}
-	if username == "" {
-		t.Fatalf("Username is empty")
-	}
-}
-
 func TestStart(t *testing.T) {
-	api, err := Start("chat")
+	_, err := Start("chat")
 	if err != nil {
 		t.Fatalf("Unable to start API")
-	}
-	if api.username == "" {
-		t.Fatalf("Unable to get username")
 	}
 }
 
@@ -38,9 +21,6 @@ func TestGetConversations(t *testing.T) {
 	api, err := Start("chat")
 	if err != nil {
 		t.Fatalf("Unable to start API")
-	}
-	if api.username == "" {
-		t.Fatalf("Unable to get username")
 	}
 	_, err = api.GetConversations(true)
 	if err != nil {
@@ -60,9 +40,6 @@ func TestGetTextMessages(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unable to start API")
 	}
-	if api.username == "" {
-		t.Fatalf("Unable to get username")
-	}
 	conv, err := api.GetConversations(false)
 	if err != nil {
 		t.Fatalf("Error getting conversations unread false %v", err)
@@ -81,9 +58,6 @@ func TestSendMessage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unable to start API")
 	}
-	if api.username == "" {
-		t.Fatalf("Unable to get username")
-	}
 	conv, err := api.GetConversations(false)
 	if err != nil {
 		t.Fatalf("Error getting conversations unread false %v", err)
@@ -99,9 +73,6 @@ func TestSendMessageByTLfName(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unable to start API")
 	}
-	if api.username == "" {
-		t.Fatalf("Unable to get username")
-	}
 	if err := api.SendMessageByTlfName(channelName, "Running Go Test from Channel Name"); err != nil {
 		t.Fatalf("Error sending message to channel %v", err)
 	}
@@ -114,9 +85,6 @@ func TestSendMessageByTeamName(t *testing.T) {
 	api, err := Start("chat")
 	if err != nil {
 		t.Fatalf("Unable to start API")
-	}
-	if api.username == "" {
-		t.Fatalf("Unable to get username")
 	}
 	if err := api.SendMessageByTeamName(teamName, "Running Go Testing from Team Name in general", nil); err != nil {
 		t.Fatalf("Unable to send message to team channel general %v", err)

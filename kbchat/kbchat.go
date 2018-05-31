@@ -2,13 +2,10 @@ package kbchat
 
 import (
 	"bufio"
-	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"os/exec"
-	"strings"
 	"time"
 )
 
@@ -17,46 +14,8 @@ func keybaseLocation() string {
 	return "keybase"
 }
 
-func getUsername(ctx context.Context) (username string, err error) {
-	p := exec.Command(keybaseLocation(), "status")
-	output, err := p.StdoutPipe()
-	if err != nil {
-		return "", fmt.Errorf("Unable to get stdout pipe %v", err)
-	}
-	if err = p.Start(); err != nil {
-		return "", fmt.Errorf("Unable to start process %v", err)
-	}
-	scanner := bufio.NewScanner(output)
-	if !scanner.Scan() {
-		return "", fmt.Errorf("unable to find Keybase username %v", scanner.Err())
-	}
-	tokens := strings.Fields(scanner.Text())
-	if len(tokens) != 2 {
-		return "", errors.New("invalid Keybase username output")
-	}
-	username = tokens[1]
-
-	if err := p.Wait(); err != nil {
-		return "", errors.New("Error waiting for status command")
-	}
-
-	select {
-	case <-ctx.Done():
-		return "", fmt.Errorf("unable to run Keybase command, %v", ctx.Err())
-	default:
-		return username, nil
-	}
-}
-
 // Start fires up the Keybase JSON API in stdin/stdout mode
 func Start(chatType string) (*API, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	// Get username first
-	username, err := getUsername(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("Unable to get username %v", err)
-	}
 
 	p := exec.Command(keybaseLocation(), chatType, "api")
 	input, err := p.StdinPipe()
@@ -76,10 +35,9 @@ func Start(chatType string) (*API, error) {
 		p.Wait()
 	}()
 	return &API{
-		Input:    input,
-		Output:   boutput,
-		Proc:     p.Process,
-		username: username,
+		Input:  input,
+		Output: boutput,
+		Proc:   p.Process,
 	}, nil
 }
 
