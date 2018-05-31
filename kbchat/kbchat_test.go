@@ -29,7 +29,7 @@ func TestStart(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unable to start API")
 	}
-	if api.Username == "" {
+	if api.username == "" {
 		t.Fatalf("Unable to get username")
 	}
 }
@@ -39,7 +39,7 @@ func TestGetConversations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unable to start API")
 	}
-	if api.Username == "" {
+	if api.username == "" {
 		t.Fatalf("Unable to get username")
 	}
 	_, err = api.GetConversations(true)
@@ -60,7 +60,7 @@ func TestGetTextMessages(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unable to start API")
 	}
-	if api.Username == "" {
+	if api.username == "" {
 		t.Fatalf("Unable to get username")
 	}
 	conv, err := api.GetConversations(false)
@@ -81,7 +81,7 @@ func TestSendMessage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unable to start API")
 	}
-	if api.Username == "" {
+	if api.username == "" {
 		t.Fatalf("Unable to get username")
 	}
 	conv, err := api.GetConversations(false)
@@ -99,7 +99,7 @@ func TestSendMessageByTLfName(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unable to start API")
 	}
-	if api.Username == "" {
+	if api.username == "" {
 		t.Fatalf("Unable to get username")
 	}
 	if err := api.SendMessageByTlfName(channelName, "Running Go Test from Channel Name"); err != nil {
@@ -115,7 +115,7 @@ func TestSendMessageByTeamName(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unable to start API")
 	}
-	if api.Username == "" {
+	if api.username == "" {
 		t.Fatalf("Unable to get username")
 	}
 	if err := api.SendMessageByTeamName(teamName, "Running Go Testing from Team Name in general", nil); err != nil {

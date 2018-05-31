@@ -31,7 +31,7 @@ type Logger interface {
 
 //Debugger is used to print debugging output from a plugin
 type Debugger interface {
-	Debug(bool)
+	Debug(bool, *io.Writer)
 }
 
 type pluginHolder struct {
@@ -89,7 +89,7 @@ func loadActivePlugins(files []string) error {
 		if err != nil {
 			return fmt.Errorf("Can't find Debugger symbol %v in %s", err, f)
 		}
-		debugSym.(Debugger).Debug(debug)
+		debugSym.(Debugger).Debug(debug, &writers)
 
 		plugHolder.Sender = sendSym.(Sender)
 		if _, ok := pluginMap[*cmdSym.(*string)]; !ok {

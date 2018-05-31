@@ -55,10 +55,10 @@ type Conversation struct {
 
 //Result of conversations
 type Result struct {
-	Convs []Conversation `json:"conversations"`
+	Conversations []Conversation `json:"conversations"`
 }
 
-//Inbox top layer of rsult
+//Inbox top layer of result
 type Inbox struct {
 	Result Result `json:"result"`
 }

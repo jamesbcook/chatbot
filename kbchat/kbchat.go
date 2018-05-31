@@ -28,13 +28,13 @@ func getUsername(ctx context.Context) (username string, err error) {
 	}
 	scanner := bufio.NewScanner(output)
 	if !scanner.Scan() {
-		return "", errors.New("unable to find Keybase username")
+		return "", fmt.Errorf("unable to find Keybase username %v", scanner.Err())
 	}
-	toks := strings.Fields(scanner.Text())
-	if len(toks) != 2 {
+	tokens := strings.Fields(scanner.Text())
+	if len(tokens) != 2 {
 		return "", errors.New("invalid Keybase username output")
 	}
-	username = toks[1]
+	username = tokens[1]
 
 	if err := p.Wait(); err != nil {
 		return "", errors.New("Error waiting for status command")
@@ -97,7 +97,7 @@ func (a *API) GetConversations(unreadOnly bool) ([]Conversation, error) {
 	if err := json.Unmarshal(inboxRaw, &inbox); err != nil {
 		return nil, fmt.Errorf("Json unmarshal GetConversations err %v", err)
 	}
-	return inbox.Result.Convs, nil
+	return inbox.Result.Conversations, nil
 }
 
 // GetTextMessages fetches all text messages from a given conversation ID. Optionally can filter
@@ -213,9 +213,9 @@ func (m NewMessageSubscription) Shutdown() {
 }
 
 //GetUnreadMessagesFromConvs via the keybase api
-func (a *API) GetUnreadMessagesFromConvs(convs []Conversation) ([]SubscriptionMessage, error) {
+func (a *API) GetUnreadMessagesFromConvs(conversations []Conversation) ([]SubscriptionMessage, error) {
 	var res []SubscriptionMessage
-	for _, conv := range convs {
+	for _, conv := range conversations {
 		msgs, err := a.GetTextMessages(conv.ID, true)
 		if err != nil {
 			return nil, fmt.Errorf("GetTextMessage err %v", err)
@@ -246,14 +246,14 @@ func (a *API) ListenForNewTextMessages() NewMessageSubscription {
 			case <-shutdownCh:
 				return
 			case <-time.After(2 * time.Second):
-				// Get all unread convos
-				convs, err := a.GetConversations(true)
+				// Get all unread conversations
+				conversations, err := a.GetConversations(true)
 				if err != nil {
 					errorCh <- err
 					continue
 				}
-				// Get unread msgs from convs
-				msgs, err := a.GetUnreadMessagesFromConvs(convs)
+				// Get unread msgs from conversations
+				msgs, err := a.GetUnreadMessagesFromConvs(conversations)
 				if err != nil {
 					errorCh <- err
 					continue
