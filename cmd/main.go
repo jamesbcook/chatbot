@@ -219,6 +219,14 @@ func main() {
 		authPlugin.Validate = validSym.(func(string) bool)
 	}
 
+	if rateLimit, ok := backgroundPluginMap["ratelimit"]; ok {
+		validSym, err := rateLimit.plug.Lookup("Validate")
+		if err != nil {
+			fatalErrorWriter(fmt.Errorf("[Error] auth validate symbol not found"))
+		}
+		rateLimit.Validate = validSym.(func(string) bool)
+	}
+
 	kbcRead, err := kbchat.Start("chat")
 	if err != nil {
 		fatalErrorWriter(fmt.Errorf("[Error] Read API: %v", err))
@@ -233,6 +241,11 @@ func main() {
 		}
 		if authPlugin, ok := backgroundPluginMap["auth"]; ok {
 			if !authPlugin.Validate(msg.Message.Sender.Username) {
+				continue
+			}
+		}
+		if rateLimit, ok := backgroundPluginMap["ratelimit"]; ok {
+			if !rateLimit.Validate(msg.Message.Sender.Username) {
 				continue
 			}
 		}
