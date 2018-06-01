@@ -31,9 +31,11 @@ plugin-setup:
 	cp chatbot-plugins/screenshot/main.go bin/active-plugins/screenshot.go
 	cp chatbot-plugins/virustotal/hash/main.go bin/active-plugins/virustotal.go
 	cp chatbot-plugins/shodan/main.go bin/active-plugins/shodan.go
+	cp chatbot-plugins/urlshorten/google/main.go bin/active-plugins/urlshorten.go
 
 	cp chatbot-plugins/chatlog/plain/main.go bin/background-plugins/log.go
 	cp chatbot-plugins/auth/team/main.go bin/background-plugins/auth.go
+	cp chatbot-plugins/ratelimit/main.go bin/background-plugins/ratelimit.go
 
 plugin-build:
 	@echo "+ $@"
@@ -48,9 +50,12 @@ plugin-build:
 	go build --buildmode=plugin -o bin/active-plugins/screenshot.so bin/active-plugins/screenshot.go
 	go build --buildmode=plugin -o bin/active-plugins/virustotal.so bin/active-plugins/virustotal.go
 	go build --buildmode=plugin -o bin/active-plugins/shodan.so bin/active-plugins/shodan.go
+	go build --buildmode=plugin -o bin/active-plugins/urlshorten.so bin/active-plugins/urlshorten.go
 
 	go build --buildmode=plugin -o bin/background-plugins/auth.so bin/background-plugins/auth.go
 	go build --buildmode=plugin -o bin/background-plugins/log.so bin/background-plugins/log.go
+	go build --buildmode=plugin -o bin/background-plugins/ratelimit.so bin/background-plugins/ratelimit.go
+
 	rm bin/active-plugins/*.go
 	rm bin/background-plugins/*.go
 
