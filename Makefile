@@ -35,6 +35,7 @@ plugin-setup:
 	cp chatbot-plugins/nmap/main.go bin/active-plugins/nmap.go
 	cp chatbot-plugins/strawpoll/main.go bin/active-plugins/strawpoll.go
 	cp chatbot-plugins/remindme/main.go bin/active-plugins/remindme.go
+	cp chatbot-plugins/api/main.go bin/active-plugins/api.go
 
 	cp chatbot-plugins/chatlog/plain/main.go bin/background-plugins/log.go
 	cp chatbot-plugins/auth/team/main.go bin/background-plugins/auth.go
@@ -57,6 +58,7 @@ plugin-build:
 	go build --buildmode=plugin -o bin/active-plugins/nmap.so bin/active-plugins/nmap.go
 	go build --buildmode=plugin -o bin/active-plugins/strawpoll.so bin/active-plugins/strawpoll.go
 	go build --buildmode=plugin -o bin/active-plugins/remindme.so bin/active-plugins/remindme.go
+	go build --buildmode=plugin -o bin/active-plugins/api.so bin/active-plugins/api.go
 
 	go build --buildmode=plugin -o bin/background-plugins/auth.so bin/background-plugins/auth.go
 	go build --buildmode=plugin -o bin/background-plugins/log.so bin/background-plugins/log.go
