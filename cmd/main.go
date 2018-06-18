@@ -17,7 +17,7 @@ import (
 //ActivePlugin interface for active plugins
 type ActivePlugin interface {
 	Get(message string) (string, error)
-	Send(string, message string) error
+	Send(subscription kbchat.SubscriptionMessage, message string) error
 	CMD() string
 	Help() string
 	Debug(bool, *io.Writer)
@@ -204,24 +204,24 @@ func main() {
 		fatalErrorWriter(fmt.Errorf("[Error] Read API: %v", err))
 	}
 
-	sub := kbcRead.ListenForNewTextMessages()
+	newMessages := kbcRead.ListenForNewTextMessages()
 	for {
-		msg, err := sub.Read()
+		subscription, err := newMessages.Read()
 		if err != nil {
 			errorWriter(fmt.Errorf("[Error] reading message %v", err))
 			continue
 		}
 		if authPlugin, ok := backgroundPluginMap["auth"]; ok {
-			if !authPlugin.Validate(msg.Message.Sender.Username) {
+			if !authPlugin.Validate(subscription.Message.Sender.Username) {
 				continue
 			}
 		}
 		if rateLimit, ok := backgroundPluginMap["ratelimit"]; ok {
-			if !rateLimit.Validate(msg.Message.Sender.Username) {
+			if !rateLimit.Validate(subscription.Message.Sender.Username) {
 				continue
 			}
 		}
-		command := strings.Fields(msg.Message.Content.Text.Body)
+		command := strings.Fields(subscription.Message.Content.Text.Body)
 		arg := strings.Join(command[1:], " ")
 		if _, ok := activePluginMap[command[0]]; !ok {
 			continue
@@ -234,7 +234,7 @@ func main() {
 			if len(res) <= 0 {
 				res = err.Error()
 			}
-			if err := activePluginMap[command[0]].Send(msg.Conversation.ID, res); err != nil {
+			if err := activePluginMap[command[0]].Send(subscription, res); err != nil {
 				errorWriter(fmt.Errorf("[Error] Send command %v", err))
 				return
 			}
