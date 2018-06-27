@@ -226,18 +226,18 @@ func main() {
 		if _, ok := activePluginMap[command[0]]; !ok {
 			continue
 		}
-		go func() {
-			res, err := activePluginMap[command[0]].Get(arg)
+		go func(name, arguments string) {
+			res, err := activePluginMap[name].Get(arguments)
 			if err != nil {
 				errorWriter(fmt.Errorf("[Error] Get command %v", err))
 			}
 			if len(res) <= 0 {
 				res = err.Error()
 			}
-			if err := activePluginMap[command[0]].Send(subscription, res); err != nil {
+			if err := activePluginMap[name].Send(subscription, res); err != nil {
 				errorWriter(fmt.Errorf("[Error] Send command %v", err))
 				return
 			}
-		}()
+		}(command[0], arg)
 	}
 }
