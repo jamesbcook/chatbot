@@ -1,6 +1,7 @@
 package kbchat_test
 
 import (
+	"os"
 	"testing"
 
 	"os/exec"
@@ -8,8 +9,8 @@ import (
 	"github.com/jamesbcook/chatbot/kbchat"
 )
 
-const (
-	chatID = ""
+var (
+	chatID = os.Getenv("CHATBOT_TEST_CHATID")
 )
 
 func TestUpload(t *testing.T) {
