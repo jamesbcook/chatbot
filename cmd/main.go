@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"plugin"
@@ -12,6 +11,7 @@ import (
 	"time"
 
 	"github.com/jamesbcook/chatbot/kbchat"
+	"github.com/jamesbcook/print"
 )
 
 //ActivePlugin interface for active plugins
@@ -50,6 +50,7 @@ var (
 	activePluginMap     = make(map[string]ActivePlugin)
 	backgroundPluginMap = make(map[string]*backgroundPluginHolder)
 	writers             io.Writer
+	errorWriter         func(v error)
 	help                []string
 	debug               bool
 )
@@ -93,19 +94,6 @@ func loadBackgroundPlugins(files []string) error {
 	return nil
 }
 
-func errorWriter(err error) {
-	output := []byte(err.Error())
-	output = append(output, '\n')
-	writers.Write(output)
-}
-
-func fatalErrorWriter(err error) {
-	output := []byte(err.Error())
-	output = append(output, '\n')
-	writers.Write(output)
-	os.Exit(1)
-}
-
 func cleanHelp(input []string) []string {
 	output := []string{}
 	for _, value := range input {
@@ -124,15 +112,15 @@ func main() {
 		for {
 			activePluginEnv := os.Getenv("CHATBOT_ACTIVE_PLUGINS")
 			if activePluginEnv == "" {
-				log.Println("Missing CHATBOT_ACTIVE_PLUGINS environment variable")
+				print.Warningln("Missing CHATBOT_ACTIVE_PLUGINS environment variable")
 			}
 			activePlugins, err := filepath.Glob(activePluginEnv + "/*.so")
 			if err != nil {
-				log.Fatal("Error with filepath glob", err)
+				print.Badln("Error with filepath glob", err)
 			}
 
 			if err := loadActivePlugins(activePlugins); err != nil {
-				log.Fatal(err)
+				print.Badln(err)
 			}
 			time.Sleep(30 * time.Second)
 		}
@@ -142,15 +130,15 @@ func main() {
 		for {
 			backgroundPluginEnv := os.Getenv("CHATBOT_BACKGROUND_PLUGINS")
 			if backgroundPluginEnv == "" {
-				log.Println("Missing CHATBOT_BACKGROUND_PLUGINS environment variable")
+				print.Badln("Missing CHATBOT_BACKGROUND_PLUGINS environment variable")
 			}
 			backgroundPlugins, err := filepath.Glob(backgroundPluginEnv + "/*.so")
 			if err != nil {
-				log.Fatal("Error with filepath glob", err)
+				print.Badln("Error with filepath glob", err)
 			}
 
 			if err := loadBackgroundPlugins(backgroundPlugins); err != nil {
-				log.Fatal(err)
+				print.Badln(err)
 			}
 			time.Sleep(30 * time.Second)
 		}
@@ -167,24 +155,26 @@ func main() {
 		}
 	}()
 
-	fmt.Println("Ready")
+	print.Goodln("Ready")
 
 	var writerList []io.Writer
 	writerList = append(writerList, os.Stdout)
 	if logPlugin, ok := backgroundPluginMap["log"]; ok {
 		writer, err := logPlugin.plug.Lookup("Logger")
 		if err != nil {
-			log.Fatalf("Error looking up logger in log plugin %v", err)
+			print.Badf("Error looking up logger in log plugin %v", err)
 		}
 		logPlugin.Logger = writer.(Logger)
 		writerList = append(writerList, logPlugin.Logger)
 	}
 	writers = io.MultiWriter(writerList...)
+	errorWriter = print.Error(&writers)
 
 	if authPlugin, ok := backgroundPluginMap["auth"]; ok {
 		validSym, err := authPlugin.plug.Lookup("Auth")
 		if err != nil {
-			fatalErrorWriter(fmt.Errorf("[Error] auth symbol not found"))
+			errorWriter(fmt.Errorf("auth symbol not found"))
+			os.Exit(1)
 		}
 		authPlugin.Authenticator = validSym.(Authenticator)
 		go authPlugin.Start()
@@ -193,7 +183,8 @@ func main() {
 	if rateLimit, ok := backgroundPluginMap["ratelimit"]; ok {
 		validSym, err := rateLimit.plug.Lookup("Auth")
 		if err != nil {
-			fatalErrorWriter(fmt.Errorf("[Error] auth symbol not found"))
+			errorWriter(fmt.Errorf("auth symbol not found"))
+			os.Exit(1)
 		}
 		rateLimit.Authenticator = validSym.(Authenticator)
 		go rateLimit.Start()
@@ -201,14 +192,15 @@ func main() {
 
 	kbcRead, err := kbchat.Start("chat")
 	if err != nil {
-		fatalErrorWriter(fmt.Errorf("[Error] Read API: %v", err))
+		errorWriter(fmt.Errorf("Read API: %v", err))
+		os.Exit(1)
 	}
 
 	newMessages := kbcRead.ListenForNewTextMessages()
 	for {
 		subscription, err := newMessages.Read()
 		if err != nil {
-			errorWriter(fmt.Errorf("[Error] reading message %v", err))
+			errorWriter(fmt.Errorf("reading message %v", err))
 			continue
 		}
 		if authPlugin, ok := backgroundPluginMap["auth"]; ok {
@@ -229,13 +221,13 @@ func main() {
 		go func(name, arguments string) {
 			res, err := activePluginMap[name].Get(arguments)
 			if err != nil {
-				errorWriter(fmt.Errorf("[Error] Get command %v", err))
+				errorWriter(fmt.Errorf("Get command %v", err))
 			}
 			if len(res) <= 0 {
 				res = err.Error()
 			}
 			if err := activePluginMap[name].Send(subscription, res); err != nil {
-				errorWriter(fmt.Errorf("[Error] Send command %v", err))
+				errorWriter(fmt.Errorf("Send command %v", err))
 				return
 			}
 		}(command[0], arg)
