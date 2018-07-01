@@ -130,7 +130,7 @@ func main() {
 		for {
 			backgroundPluginEnv := os.Getenv("CHATBOT_BACKGROUND_PLUGINS")
 			if backgroundPluginEnv == "" {
-				print.Badln("Missing CHATBOT_BACKGROUND_PLUGINS environment variable")
+				print.Warningln("Missing CHATBOT_BACKGROUND_PLUGINS environment variable")
 			}
 			backgroundPlugins, err := filepath.Glob(backgroundPluginEnv + "/*.so")
 			if err != nil {
