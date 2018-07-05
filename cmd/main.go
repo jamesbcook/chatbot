@@ -50,7 +50,6 @@ var (
 	activePluginMap     = make(map[string]ActivePlugin)
 	backgroundPluginMap = make(map[string]*backgroundPluginHolder)
 	writers             io.Writer
-	errorWriter         func(v error)
 	help                []string
 	debug               bool
 )
@@ -168,7 +167,7 @@ func main() {
 		writerList = append(writerList, logPlugin.Logger)
 	}
 	writers = io.MultiWriter(writerList...)
-	errorWriter = print.Error(&writers)
+	errorWriter := print.Error(&writers)
 
 	if authPlugin, ok := backgroundPluginMap["auth"]; ok {
 		validSym, err := authPlugin.plug.Lookup("Auth")
