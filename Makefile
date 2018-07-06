@@ -1,3 +1,5 @@
+GIT_VERSION=`git log --pretty=format:"%h" -1`
+BIN_VERSION=`cat version.txt`
 
 lint:
 	@echo "+ $@"
@@ -13,7 +15,7 @@ test:
 
 build:
 	@echo "+ $@"
-	env GOOS=linux GOARCH=amd64 go build -o bin/bot cmd/main.go
+	env GOOS=linux GOARCH=amd64 go build -ldflags "-X main.gitCommit=${GIT_VERSION} -X main.binVersion=${BIN_VERSION}" -o bin/bot cmd/main.go
 
 plugin-setup: 
 	@echo "+ $@"
@@ -44,7 +46,7 @@ plugin-setup:
 plugin-build:
 	@echo "+ $@"
 	go build --buildmode=plugin -o bin/active-plugins/crypto-api.so bin/active-plugins/crypto-api.go
-	go build --buildmode=plugin -o bin/active-plugins/help.so bin/active-plugins/help.go
+	go build --buildmode=plugin -ldflags "-X main.version=${BIN_VERSION}" -o bin/active-plugins/help.so bin/active-plugins/help.go
 	go build --buildmode=plugin -o bin/active-plugins/reddit.so bin/active-plugins/reddit.go
 	go build --buildmode=plugin -o bin/active-plugins/weather.so bin/active-plugins/weather.go
 	go build --buildmode=plugin -o bin/active-plugins/hibp-account.so bin/active-plugins/hibp-account.go

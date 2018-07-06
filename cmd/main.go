@@ -51,6 +51,8 @@ var (
 	backgroundPluginMap = make(map[string]*backgroundPluginHolder)
 	writers             io.Writer
 	help                []string
+	gitCommit           string
+	binVersion          string
 	debug               bool
 )
 
@@ -105,7 +107,12 @@ func cleanHelp(input []string) []string {
 
 func main() {
 	d := flag.Bool("debug", false, "Print debug statements from plugins")
+	v := flag.Bool("version", false, "Current Version")
 	flag.Parse()
+	if *v {
+		fmt.Printf("chatbot v%s %s\n", binVersion, gitCommit)
+		os.Exit(0)
+	}
 	debug = *d
 	go func() {
 		for {
