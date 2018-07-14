@@ -1,0 +1,22 @@
+version: '3'
+services:
+  
+  chatbot:
+    hostname: chatbot
+    container_name: chatbot_chatbot
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      KEYBASE_USERNAME: "" 
+      KEYBASE_PAPERKEY: ""
+      CHATBOT_USERS: ""
+      CHATBOT_TEAM: ""
+      CHATBOT_VIRUSTOTAL: ""
+      CHATBOT_WEATHER: ""
+      CHATBOT_GIPHY: ""
+      CHATBOT_URL_SHORTEN: ""
+      CHATBOT_SHODAN: ""
+      CHATBOT_LISTEN_PORT: ""
+      CHATBOT_REMINDME_PASSWORD: ""
+    restart: always
