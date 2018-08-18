@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"plugin"
 	"strings"
 	"time"
 
@@ -14,41 +13,10 @@ import (
 	"github.com/jamesbcook/print"
 )
 
-//ActivePlugin interface for active plugins
-type ActivePlugin interface {
-	Get(message string) (string, error)
-	Send(subscription kbchat.SubscriptionMessage, message string) error
-	CMD() string
-	Help() string
-	Debug(bool, *io.Writer)
-}
-
-//BackgroundPlugin interface for background plugins
-type BackgroundPlugin interface {
-	Name() string
-	Debug(bool, *io.Writer)
-}
-
-//Authenticator interface for auth plugins
-type Authenticator interface {
-	Start()
-	Validate(user string) bool
-}
-
-//Logger is used for the Write function in the plugins
-type Logger interface {
-	Write(p []byte) (int, error)
-}
-
-type backgroundPluginHolder struct {
-	plug *plugin.Plugin
-	Logger
-	Authenticator
-}
-
 var (
 	activePluginMap     = make(map[string]ActivePlugin)
 	backgroundPluginMap = make(map[string]*backgroundPluginHolder)
+	extraPlugins        = make(map[string]Extra)
 	writers             io.Writer
 	help                []string
 	gitCommit           string
@@ -56,43 +24,23 @@ var (
 	debug               bool
 )
 
-func loadActivePlugins(files []string) error {
-	help = make([]string, len(files))
-	for x, f := range files {
-		p, err := plugin.Open(f)
-		if err != nil {
-			return fmt.Errorf("Can't open plugin file %s %v", f, err)
-		}
+type loader func([]string) error
 
-		apSym, err := p.Lookup("AP")
-		ap := apSym.(ActivePlugin)
-		help[x] = ap.Help()
-		ap.Debug(debug, &writers)
-
-		if _, ok := activePluginMap[ap.CMD()]; !ok {
-			activePluginMap[ap.CMD()] = ap
+func printFiles(files []string) error {
+	if debug {
+		for _, file := range files {
+			print.Statusf("Loading %s\n", file)
 		}
 	}
 	return nil
 }
 
-func loadBackgroundPlugins(files []string) error {
-	for _, f := range files {
-		p, err := plugin.Open(f)
-		if err != nil {
-			return fmt.Errorf("Can't open plugin file %s %v", f, err)
-		}
-		bpSymbol, err := p.Lookup("BP")
-		if err != nil {
-			return fmt.Errorf("Can't find Name symbol %v in %s", err, f)
-		}
-		bp := bpSymbol.(BackgroundPlugin)
-		bp.Debug(debug, &writers)
-		if _, ok := backgroundPluginMap[bp.Name()]; !ok {
-			backgroundPluginMap[bp.Name()] = &backgroundPluginHolder{plug: p}
+func decorateLoader(files []string, loaders ...loader) {
+	for _, load := range loaders {
+		if err := load(files); err != nil {
+			print.Badln(err)
 		}
 	}
-	return nil
 }
 
 func cleanHelp(input []string) []string {
@@ -105,6 +53,18 @@ func cleanHelp(input []string) []string {
 	return output
 }
 
+func globFiles(path string) []string {
+	files, err := filepath.Glob(path + "/*.so")
+	if err != nil {
+		print.Badln(err)
+	}
+	return files
+}
+
+func wait(seconds int) {
+	time.Sleep(time.Duration(seconds) * time.Second)
+}
+
 func main() {
 	d := flag.Bool("debug", false, "Print debug statements from plugins")
 	v := flag.Bool("version", false, "Current Version")
@@ -114,41 +74,34 @@ func main() {
 		os.Exit(0)
 	}
 	debug = *d
-	go func() {
-		for {
-			activePluginEnv := os.Getenv("CHATBOT_ACTIVE_PLUGINS")
-			if activePluginEnv == "" {
-				print.Warningln("Missing CHATBOT_ACTIVE_PLUGINS environment variable")
-			}
-			activePlugins, err := filepath.Glob(activePluginEnv + "/*.so")
-			if err != nil {
-				print.Badln("Error with filepath glob", err)
-			}
+	type loaderEnv struct {
+		envFunc           func() string
+		envWarningMessage string
+		loadFunc          loader
+	}
 
-			if err := loadActivePlugins(activePlugins); err != nil {
-				print.Badln(err)
-			}
-			time.Sleep(30 * time.Second)
-		}
-	}()
+	loaders := []loaderEnv{}
 
-	go func() {
-		for {
-			backgroundPluginEnv := os.Getenv("CHATBOT_BACKGROUND_PLUGINS")
-			if backgroundPluginEnv == "" {
-				print.Warningln("Missing CHATBOT_BACKGROUND_PLUGINS environment variable")
-			}
-			backgroundPlugins, err := filepath.Glob(backgroundPluginEnv + "/*.so")
-			if err != nil {
-				print.Badln("Error with filepath glob", err)
-			}
+	loaders = append(loaders, loaderEnv{activePluginEnvironment, "CHATBOT_ACTIVE_PLUGINS", loadActivePlugins})
+	loaders = append(loaders, loaderEnv{backgroundPluginEnvironment, "CHATBOT_BACKGROUND_PLUGINS", loadBackgroundPlugins})
+	loaders = append(loaders, loaderEnv{extraPluginEnvironment, "CHATBOT_EXTRA_PLUGINS", loadExtraPlugins})
 
-			if err := loadBackgroundPlugins(backgroundPlugins); err != nil {
-				print.Badln(err)
+	for _, load := range loaders {
+		go func(l loaderEnv) {
+			for {
+				path := l.envFunc()
+				if path == "" {
+					print.Warningf("Missing %s\n", l.envWarningMessage)
+					wait(30)
+					continue
+				}
+				plugins := globFiles(path)
+
+				decorateLoader(plugins, printFiles, l.loadFunc)
+				wait(30)
 			}
-			time.Sleep(30 * time.Second)
-		}
-	}()
+		}(load)
+	}
 
 	time.Sleep(10 * time.Second)
 
@@ -219,11 +172,25 @@ func main() {
 				continue
 			}
 		}
+		go func(messageID, message string) {
+			for _, ep := range extraPlugins {
+				res, err := ep.Get(message)
+				if res == "" || err != nil {
+					errorWriter(err)
+					return
+				}
+				if err := ep.Send(messageID, res); err != nil {
+					errorWriter(err)
+					return
+				}
+			}
+		}(subscription.Conversation.ID, subscription.Message.Content.Text.Body)
+
 		command := strings.Fields(subscription.Message.Content.Text.Body)
-		arg := strings.Join(command[1:], " ")
 		if _, ok := activePluginMap[command[0]]; !ok {
 			continue
 		}
+		arg := strings.Join(command[1:], " ")
 		go func(name, arguments string) {
 			res, err := activePluginMap[name].Get(arguments)
 			if err != nil {
